@@ -8,6 +8,8 @@ int main(void){
     xPtr = &x;
     printf("%d\n", *xPtr);
 
+    // her er en endring erkjgnekrgjnkeargjnakø
+
 
 
     return 0;
