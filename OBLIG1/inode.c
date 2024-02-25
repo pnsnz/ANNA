@@ -92,9 +92,10 @@ struct inode* load_inodes( char* master_file_table )
 
     if (fil == NULL) {
         perror("File opening");
+        return NULL;
     }
 
-    struct inode *root = malloc(sizeof(struct inode));
+    struct inode* root = malloc(sizeof(struct inode));
 
     fread(&root->id, 1, sizeof(int),fil);
     //len with 0
@@ -102,32 +103,30 @@ struct inode* load_inodes( char* master_file_table )
     fread(&root->name, 1, len, fil);
     fread(&root->is_directory, 1, sizeof(char), fil);
 
-    if(root->is_directory){
+    if(root->is_directory) {
         //Later, each entry will fill 8 bytes.
         fread(&root->num_children, 1, sizeof(int), fil);
 
-        struct inode **children = malloc((sizeof(struct inode)) * (root->num_children));
+        //struct inode** children = malloc((sizeof(struct inode)) * (root->num_children));
+        root->children = malloc(sizeof(struct inode*) * (root->num_children));
 
-        for( int i=0; i<root->num_children; i++ )
-        {
-            fread(&root->children[i], 1, sizeof(size_t),fil);
+        for (int i = 0; i < root->num_children; i++) {
+            fread(&root->children[i], 1, sizeof(size_t), fil);
             root->children[i] = load_inodes(master_file_table);
-        } else {
-
         }
-
     }
-    //This file has the filesize, giving a simulated file size in bytes.
-    // The file has also num_blocks, which is the number of (simulated)
-    // blocks required to store the file with filesize bytes.
-    //can use blocks_needed()
+    else {
+        fread(&root->filesize, 1, sizeof(int), fil);
+        fread(&root->num_blocks, 1, sizeof(int), fil);
 
+        root->blocks = malloc(sizeof(size_t) * root->num_blocks);
 
+        fread(&root->blocks, sizeof(size_t), root->num_blocks, fil);
+    }
 
+    fclose(fil);
 
-
-    /* to be implemented */
-    return NULL;
+    return root;
 }
 
 /* The function save_inode is a recursive functions that is
