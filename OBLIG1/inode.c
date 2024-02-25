@@ -62,13 +62,15 @@ struct inode* find_inode_by_name( struct inode* parent, char* name )
 
 static int verified_delete_in_parent( struct inode* parent, struct inode* node )
 {
-    /* to be implemented */
+    /* to be implemented
+     * not a must*/
     return 0;
 }
 
 int is_node_in_parent( struct inode* parent, struct inode* node )
 {
-    /* to be implemented */
+    /* to be implemented
+     * not a must*/
     return 0;
 }
 
@@ -86,6 +88,44 @@ int delete_dir( struct inode* parent, struct inode* node )
 
 struct inode* load_inodes( char* master_file_table )
 {
+    FILE *fil = fopen(master_file_table, "r");
+
+    if (fil == NULL) {
+        perror("File opening");
+    }
+
+    struct inode *root = malloc(sizeof(struct inode));
+
+    fread(&root->id, 1, sizeof(int),fil);
+    //len with 0
+    int len = fread(&len, 1, sizeof(int), fil);
+    fread(&root->name, 1, len, fil);
+    fread(&root->is_directory, 1, sizeof(char), fil);
+
+    if(root->is_directory){
+        //Later, each entry will fill 8 bytes.
+        fread(&root->num_children, 1, sizeof(int), fil);
+
+        struct inode **children = malloc((sizeof(struct inode)) * (root->num_children));
+
+        for( int i=0; i<root->num_children; i++ )
+        {
+            fread(&root->children[i], 1, sizeof(size_t),fil);
+            root->children[i] = load_inodes(master_file_table);
+        } else {
+
+        }
+
+    }
+    //This file has the filesize, giving a simulated file size in bytes.
+    // The file has also num_blocks, which is the number of (simulated)
+    // blocks required to store the file with filesize bytes.
+    //can use blocks_needed()
+
+
+
+
+
     /* to be implemented */
     return NULL;
 }
