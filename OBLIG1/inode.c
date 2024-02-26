@@ -89,7 +89,7 @@ struct inode* load_inodes( char* master_file_table )
     fread(&length_of_name, 1, sizeof(int), fil);
 
     // ->/.? 
-    root->name = malloc(length_of_name + 1); //+1 for good meassure?
+    root->name = malloc(length_of_name); //+1 for good meassure?
     if (root->name == NULL){
         printf("heap alloc failed.\n");
         return EXIT_FAILURE;
