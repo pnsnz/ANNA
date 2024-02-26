@@ -56,7 +56,19 @@ struct inode* create_dir( struct inode* parent, char* name )
 
 struct inode* find_inode_by_name( struct inode* parent, char* name )
 {
-    /* to be implemented */
+    //antagelse at parent er dictionary
+    if(!parent->is_directory)
+    {
+        return NULL ;
+    }
+
+    for( int i = 0; i < parent->num_children; i++ ) {
+        struct inode* current_child = parent->children[i];
+
+        if(strcmp(current_child->name, name) == 0 ) {
+            return current_child;
+        }
+    }
     return NULL;
 }
 
