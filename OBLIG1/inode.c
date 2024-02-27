@@ -108,7 +108,7 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
     struct inode* node = malloc(sizeof(struct inode));
 
     if(node == NULL) {
-        perror("Failed allocating memory for inode")
+        perror("Failed allocating memory for inode");
         return NULL;
     }
 
@@ -122,14 +122,15 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
 
     //allocate memory for char array, name
     node->name = malloc(len);
+    fread(node->name, 1, len, fil);
 
     if (node->name == NULL){
-        printf("Failed allocating memory for name ");
+        printf("Failed reading name");
         free(node);
         return NULL;
     }
 
-    fread(node->name, 1, len, fil);
+
     fread(&node->is_directory, 1, sizeof(char), fil);
 
     if(node->is_directory) {
@@ -146,7 +147,7 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
             size_t bytes_read = ftell(fil) - initial_position;
 
             //use recursive with the right offset
-            node->children[i] = load_inodes_recursive(fil, bytes_read);
+            node->children[i] = load_inodes_recursive(fil, bytes_read+offset);
         }
     }
     else {
@@ -222,7 +223,7 @@ static void save_inode( FILE* file, struct inode* node )
     }
 }
 
-void save_inodes( char* master_file_table, struct inode* current_node )
+void save_inodes( char* master_file_table, struct inode* root )
 {
     if( root == NULL )
     {
