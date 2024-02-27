@@ -112,9 +112,6 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
         return NULL;
     }
 
-    //checking the initial position of file, using this to read offset correctly
-    size_t initial_position = ftell(fil);
-
     fread(&node->id, 1, sizeof(int),fil);
 
     int len;
@@ -142,7 +139,7 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
         for (int i = 0; i < node->num_children; i++) {
 
             //calculating the offset
-            size_t bytes_read = ftell(fil) - initial_position;
+            size_t bytes_read = ftell(fil);
 
             fread(&node->children[i], 1, sizeof(size_t), fil);
 
