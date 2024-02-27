@@ -130,7 +130,6 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
         return NULL;
     }
 
-
     fread(&node->is_directory, 1, sizeof(char), fil);
 
     if(node->is_directory) {
@@ -141,10 +140,11 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
         node->children = malloc(sizeof(struct inode*) * (node->num_children));
 
         for (int i = 0; i < node->num_children; i++) {
-            fread(&node->children[i], 1, sizeof(size_t), fil);
 
             //calculating the offset
             size_t bytes_read = ftell(fil) - initial_position;
+
+            fread(&node->children[i], 1, sizeof(size_t), fil);
 
             //use recursive with the right offset
             node->children[i] = load_inodes_recursive(fil, bytes_read+offset);
