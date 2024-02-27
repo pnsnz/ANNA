@@ -66,9 +66,28 @@ static int verified_delete_in_parent( struct inode* parent, struct inode* node )
     return 0;
 }
 
-int is_node_in_parent( struct inode* parent, struct inode* node )
+int is_node_in_parent( struct inode* parent, struct inode* node ) // 0 = false, 1 = true
 {
-    /* to be implemented */
+    if (parent == NULL | node == NULL) { // hvis forelder/barn ikke finnes
+        return 0;
+    }
+    
+    if (!parent->is_directory) { // hvis fil
+        return 0;
+    }
+    if (parent->num_children == 0) { // hvis ingen barn
+        return 0;
+    }
+
+    // parent er en directory med barn
+    for ( int i = 0; i < parent->num_children; i++ ) { // iterer gjennom barn
+        struct inode* child = parent->children[i]; // mellomlagrer
+
+        if ( strcmp(parent->name, child->name) == 0 ) {
+            return 1; 
+        }
+    }
+
     return 0;
 }
 
