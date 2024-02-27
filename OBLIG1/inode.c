@@ -146,8 +146,12 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
 
             fread(&node->children[i], 1, sizeof(size_t), fil);
 
-            //use recursive with the right offset
-            node->children[i] = load_inodes_recursive(fil, bytes_read+offset);
+            if (i == 0) {
+                //use recursive with the right offset
+                node->children[i] = load_inodes_recursive(fil, bytes_read + (node->num_children * sizeof(size_t)));
+            } else {
+                node->children[i] = load_inodes_recursive(fil, bytes_read);
+            }
         }
     }
     else {
