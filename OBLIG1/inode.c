@@ -93,7 +93,25 @@ int is_node_in_parent( struct inode* parent, struct inode* node ) // 0 = false, 
 
 int delete_file( struct inode* parent, struct inode* node )
 {
-    /* to be implemented */
+    // hvis ikke direkte forelder, denne sjekker også at begge finnes, og at parent har barn
+    if ( is_node_in_parent(parent, node) == 0 ) { 
+        return -1;
+    }
+
+    for ( int i = 0; i < parent->num_children; i++ ) { // fjern node fra parent->children[]
+        struct inode* child = parent->children[i];
+
+        if ( strcmp(child->name, node->name) == 0 ) {
+            parent->children[i] == NULL;
+        }
+    }
+
+    for ( int i = 0; i < node->num_blocks; i++ ) { // frigjør blokkene
+        free_block( node->blocks[i] ); // litt usikker på denne
+    }
+    free(node->name);
+    free(node);
+
     return 0;
 }
 
@@ -103,10 +121,86 @@ int delete_dir( struct inode* parent, struct inode* node )
     return 0;
 }
 
-struct inode* load_inodes( char* master_file_table )
+struct inode* load_inodes_recursive(FILE* fil, size_t offset)
 {
-    /* to be implemented */
-    return NULL;
+    //sets the file position to given offset, returns 0 if success
+    fseek(fil, offset, SEEK_SET);
+
+    //allocate memory for the node struct
+    struct inode* node = malloc(sizeof(struct inode));
+
+    if(node == NULL) {
+        perror("Failed allocating memory for inode");
+        return NULL;
+    }
+
+    //checking the initial position of file, using this to read offset correctly
+    size_t initial_position = ftell(fil);
+
+    fread(&node->id, 1, sizeof(int),fil);
+
+    int len;
+    fread(&len, 1, sizeof(int), fil);
+
+    //allocate memory for char array, name
+    node->name = malloc(len);
+    fread(node->name, 1, len, fil);
+
+    if (node->name == NULL){
+        printf("Failed reading name");
+        free(node);
+        return NULL;
+    }
+
+
+    fread(&node->is_directory, 1, sizeof(char), fil);
+
+    if(node->is_directory) {
+        //each child entry will fill 8 bytes.
+        fread(&node->num_children, 1, sizeof(int), fil);
+
+        //allocate memory for children array
+        node->children = malloc(sizeof(struct inode*) * (node->num_children));
+
+        for (int i = 0; i < node->num_children; i++) {
+            fread(&node->children[i], 1, sizeof(size_t), fil);
+
+            //calculating the offset
+            size_t bytes_read = ftell(fil) - initial_position;
+
+            //use recursive with the right offset
+            node->children[i] = load_inodes_recursive(fil, bytes_read+offset);
+        }
+    }
+    else {
+        //node is a file, no children
+
+        fread(&node->filesize, 1, sizeof(int), fil);
+        fread(&node->num_blocks, 1, sizeof(int), fil);
+
+        //allocate memory for blocks array
+        node->blocks = malloc(sizeof(size_t) * node->num_blocks);
+
+        fread(node->blocks, sizeof(size_t), node->num_blocks, fil);
+    }
+
+    return node;
+}
+
+
+struct inode* load_inodes( char* master_file_table ) {
+    FILE *fil = fopen(master_file_table, "r");
+
+    if (fil == NULL) {
+        perror("File opening");
+        return NULL;
+    }
+
+    struct inode *root = load_inodes_recursive(fil,  0);
+
+    fclose(fil);
+
+    return root;
 }
 
 /* The function save_inode is a recursive functions that is
