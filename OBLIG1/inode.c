@@ -101,7 +101,7 @@ int delete_file( struct inode* parent, struct inode* node )
     for ( int i = 0; i < parent->num_children; i++ ) { // fjern node fra parent->children[]
         struct inode* child = parent->children[i];
 
-        if ( child->id == node->id ) {
+        if ( child->id == node->id ) { // finn riktig node i children
             parent->children[i] == NULL;
         }
     }
@@ -122,7 +122,26 @@ int delete_dir( struct inode* parent, struct inode* node )
         return -1;
     }
 
+    if (!node->is_directory) { // hvis barnet er en fil
+        return -1;
+    }
 
+    // antar at vi har endret num_children riktig til nå
+    if (node->num_children > 0) {  
+        return -1; // hvis noden ikke er tom
+    }
+
+    for ( int i = 0; i < parent->num_children; i++ ) { // fjern node fra parent->children[]
+        struct inode* child = parent->children[i];
+
+        if ( child->id == node->id ) { // finn riktig node i children
+            parent->children[i] == NULL;
+        }
+    }
+
+    free(node->children);
+    free(node->name);
+    free(node);
 
     return 0;
 }
