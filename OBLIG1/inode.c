@@ -56,7 +56,19 @@ struct inode* create_dir( struct inode* parent, char* name )
 
 struct inode* find_inode_by_name( struct inode* parent, char* name )
 {
-    /* to be implemented */
+    //antagelse at parent er dictionary
+    if(!parent->is_directory)
+    {
+        return NULL ;
+    }
+
+    for( int i = 0; i < parent->num_children; i++ ) {
+        struct inode* current_child = parent->children[i];
+
+        if(strcmp(current_child->name, name) == 0 ) {
+            return current_child;
+        }
+    }
     return NULL;
 }
 
@@ -94,7 +106,6 @@ int is_node_in_parent( struct inode* parent, struct inode* node ) // 0 = false, 
 
 int delete_file( struct inode* parent, struct inode* node )
 {
-    
     // hvis ikke direkte forelder. Denne sjekker også at begge finnes, og at parent har barn
     if ( is_node_in_parent(parent, node) == 0 ) { 
         return -1;
@@ -110,7 +121,7 @@ int delete_file( struct inode* parent, struct inode* node )
         }
     }
 
-    if (foundChild == 0) {
+    if (!foundChild) {
         return -1;
     }
     
@@ -146,7 +157,7 @@ int delete_dir( struct inode* parent, struct inode* node )
         }
     }
 
-    if (foundChild == 0) {
+    if (!foundChild) {
         return -1;
     }
 
