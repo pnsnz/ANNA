@@ -42,21 +42,119 @@ static int next_inode_id( )
     return retval;
 }
 
+void free_blocks(int *indexes, int length)
+{
+    for(int i = 0; i < length; i++)
+    {
+        free_block(indexes[i]);
+    }
+}
+
 struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
 {
-    /* to be implemented */
-    return NULL;
+
+    //if file with same name exist, return NULL, do nothing
+    if(!parent->is_directory || find_inode_by_name(parent, name) != NULL){
+        return NULL;
+    }
+
+    int number_of_blocks = blocks_needed(size_in_bytes);
+
+    //indexes in the block_table that we used
+    int index[number_of_blocks];
+
+    for(int i = 0; i < number_of_blocks; i++)
+    {
+        //can only allocate one block
+        if(allocate_block() == -1)
+        {
+            perror("Cannot allocate all needed blocks");
+            free_blocks(index, number_of_blocks);
+            return NULL;
+        }
+        index[i] = allocate_block();
+    }
+    //if place is there make a node, first allocate memory for it
+    struct inode *file = malloc(sizeof(struct inode));
+    if (file == NULL) {
+        perror("Couldnt allocate space for file");
+        free(file);
+        return NULL;
+    }
+
+    file->id = next_inode_id();
+
+    file->name = malloc(strlen(name)+1);
+    if(file->name == NULL){
+        perror("Couldnt allocate space for name");
+        free(file->name);
+        free(file);
+        return NULL;
+    }
+
+    //have to copy, cant point at the same address
+    //if the name changes, program goes booooo
+    strcpy(file->name,name);
+
+    file->is_directory = 0;
+    file->filesize = size_in_bytes;
+    file->num_blocks = number_of_blocks;
+
+    file->blocks = malloc(sizeof(size_t) * number_of_blocks);
+    if(file->blocks == NULL) {
+        perror("Couldnt allocate space for blocks");
+        free_blocks(index,number_of_blocks);
+        free(file->name);
+        free(file);
+        return NULL;
+    }
+
+    for(int i = 0; i< number_of_blocks; i++) {
+        file-> blocks[i] = index[i];
+    }
+    return file;
 }
 
 struct inode* create_dir( struct inode* parent, char* name )
-{
-    /* to be implemented */
-    return NULL;
-}
+{ //anna sin kode
+        if (find_inode_by_name(parent, name) != NULL){
+            return NULL;
+        }
+
+        // create struct
+        struct inode* new_dir = malloc(sizeof(struct inode*));
+
+        //set ID
+        new_dir->id = next_inode_id();
+
+        // set name
+        new_dir->name = malloc(sizeof(name));
+        new_dir->name = name;
+        if (new_dir->name == NULL){
+            perror("couldnt allocate name correctly");
+            return NULL;
+        }
+
+        // set flag
+        new_dir->is_directory = 1;
+
+        // num_children
+        new_dir->num_children = 0;
+
+        // malloc struct * num_children0?
+        new_dir->children = malloc(sizeof(struct inode*) * (new_dir->num_children));
+
+        return new_dir;
+    }
 
 struct inode* find_inode_by_name( struct inode* parent, char* name )
 {
-    //antagelse at parent er dictionary
+    // hvis parent ikke finnes
+    if (parent == NULL) {
+        return NULL;
+    }
+
+    //antagelse at parent er directory
     if(!parent->is_directory)
     {
         return NULL ;
@@ -114,9 +212,13 @@ int delete_file( struct inode* parent, struct inode* node )
     char foundChild = 0;
     for ( int i = 0; i < parent->num_children; i++ ) { // fjern node fra parent->children[]
         struct inode *child = parent->children[i];
+        if (child == NULL) { // kan dukke opp hull slik vi fjerner fra children når vi sletter
+            continue;
+        }
 
         if ( child->id == node->id ) { // finn riktig node i children
             parent->children[i] = NULL;
+            parent->num_children--;
             foundChild = 1;
         }
     }
@@ -150,9 +252,13 @@ int delete_dir( struct inode* parent, struct inode* node )
     char foundChild = 0;
     for ( int i = 0; i < parent->num_children; i++ ) { // fjern node fra parent->children[]
         struct inode *child = parent->children[i];
+        if (child == NULL) {
+            continue;
+        }
 
         if ( child->id == node->id ) { // finn riktig node i children
             parent->children[i] = NULL;
+            parent->num_children--;
             foundChild = 1;
         }
     }
