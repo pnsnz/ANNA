@@ -42,6 +42,14 @@ static int next_inode_id( )
     return retval;
 }
 
+void free_blocks(int *indexes)
+{
+    for(int i = 0; i < sizeof(indexes); i++)
+    {
+        free_block(indexes[i]);
+    }
+}
+
 struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
 {
 
@@ -53,7 +61,7 @@ struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
     int number_of_blocks = blocks_needed(size_in_bytes);
 
     //indexes in the block_table that we used
-    int index[];
+    int index[number_of_blocks];
 
     for(int i = 0; i < number_of_blocks; i++)
     {
@@ -61,17 +69,51 @@ struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
         if(allocate_block() == -1)
         {
             perror("Cannot allocate all needed blocks");
-            for(int i)
-            free_block()
+            free_blocks(index);
             return NULL;
         }
-        index[i] = allocate_block()
+        index[i] = allocate_block();
     }
-    /* to be implemented */
-    return NULL;
+    //if place is there make a node, first allocate memory for it
+    struct inode *file = malloc(sizeof(struct inode));
+    if (file == NULL) {
+        perror("Couldnt allocate space for file");
+        free(file);
+        return NULL;
+    }
+
+    file->id = next_inode_id();
+
+    file->name = malloc(strlen(name)+1);
+    if(file->name == NULL){
+        perror("Couldnt allocate space for name");
+        free(file->name);
+        free(file);
+        return NULL;
+    }
+
+    //have to copy, cant point at the same address
+    //if the name changes, program goes booooo
+    strcpy(file->name,name);
+
+    file->is_directory = 0;
+    file->filesize = size_in_bytes;
+    file->num_blocks = number_of_blocks;
+
+    file->blocks = malloc(sizeof(size_t) * number_of_blocks);
+    if(file->blocks == NULL) {
+        perror("Couldnt allocate space for blocks");
+        free_blocks(index);
+        free(file->name);
+        free(file);
+        return NULL;
+    }
+
+    for(int i = 0; i< number_of_blocks; i++) {
+        file-> blocks[i] = index[i];
+    }
+    return file;
 }
-
-
 
 struct inode* create_dir( struct inode* parent, char* name )
 {
