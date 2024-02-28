@@ -101,7 +101,7 @@ int delete_file( struct inode* parent, struct inode* node )
     for ( int i = 0; i < parent->num_children; i++ ) { // fjern node fra parent->children[]
         struct inode* child = parent->children[i];
 
-        if ( strcmp(child->name, node->name) == 0 ) {
+        if ( child->id == node->id ) {
             parent->children[i] == NULL;
         }
     }
@@ -109,6 +109,7 @@ int delete_file( struct inode* parent, struct inode* node )
     for ( int i = 0; i < node->num_blocks; i++ ) { // frigjør blokkene
         free_block( node->blocks[i] ); // litt usikker på denne
     }
+
     free(node->name);
     free(node);
 
@@ -117,7 +118,12 @@ int delete_file( struct inode* parent, struct inode* node )
 
 int delete_dir( struct inode* parent, struct inode* node )
 {
-    /* to be implemented */
+    if ( is_node_in_parent(parent, node) == 0 ) { 
+        return -1;
+    }
+
+
+
     return 0;
 }
 
