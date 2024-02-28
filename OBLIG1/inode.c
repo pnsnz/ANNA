@@ -28,20 +28,85 @@ static int next_inode_id( )
 
 struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
 {
+    /*
+    //if file with same name exist, return NULL, do nothing
+    if(!parent->is_directory || find_inode_by_name(parent, name) != NULL){
+        return NULL;
+    }
+
+    int number_of_blocks = blocks_needed(size_in_bytes);
+
+    //indexes in the block_table that we used
+    int index[];
+
+    for(int i = 0; i < number_of_blocks; i++)
+    {
+        //can only allocate one block
+        if(allocate_block() == -1)
+        {
+            perror("Cannot allocate all needed blocks");
+            for(int i)
+            free_block()
+            return NULL;
+        }
+        index[i] = allocate_block()
+    }
+    */
+
     /* to be implemented */
     return NULL;
 }
 
 struct inode* create_dir( struct inode* parent, char* name )
 {
-    /* to be implemented */
-    return NULL;
+
+    if (find_inode_by_name(parent, name) != NULL){
+        return NULL;
+    }
+
+    // create struct
+    struct inode* new_dir = malloc(sizeof(struct inode*));
+
+    //set ID
+    new_dir->id = next_inode_id();
+
+    // set name
+    new_dir->name = malloc(sizeof(name));
+    new_dir->name = name;
+    if (new_dir->name == NULL){
+        perror("couldnt allocate name correctly");
+        return -1;
+    }
+
+    // set flag
+    new_dir->is_directory = 1;
+
+    // num_children
+    new_dir->num_children = 0;
+
+    // malloc struct * num_children0?
+    new_dir->children = malloc(sizeof(struct inode*) * (new_dir->num_children));
+
+    return new_dir;
 }
 
 struct inode* find_inode_by_name( struct inode* parent, char* name )
 {
-    /* to be implemented */
+    //antagelse at parent er dictionary
+    if(!parent->is_directory)
+    {
+        return NULL ;
+    }
+
+    for( int i = 0; i < parent->num_children; i++ ) {
+        struct inode* current_child = parent->children[i];
+
+        if(strcmp(current_child->name, name) == 0 ) {
+            return current_child;
+        }
+    }
     return NULL;
+
 }
 
 static int verified_delete_in_parent( struct inode* parent, struct inode* node )
@@ -69,42 +134,124 @@ int delete_dir( struct inode* parent, struct inode* node )
     return 0;
 }
 
+//-------------------------------------------------------------
+
+struct inode* load_inodes_recursive(FILE* fil, size_t offset)
+{
+    //sets the file position to given offset, returns 0 if success
+    fseek(fil, offset, SEEK_SET);
+
+    //allocate memory for the node struct
+    struct inode* node = malloc(sizeof(struct inode));
+
+    if(node == NULL) {
+        perror("Failed allocating memory for inode");
+        return NULL;
+    }
+
+    fread(&node->id, 1, sizeof(int),fil);
+
+    int len;
+    fread(&len, 1, sizeof(int), fil);
+
+    //allocate memory for char array, name
+    node->name = malloc(len);
+    fread(node->name, 1, len, fil);
+
+    if (node->name == NULL){
+        printf("Failed reading name");
+        free(node);
+        return NULL;
+    }
+
+    fread(&node->is_directory, 1, sizeof(char), fil);
+
+    if(node->is_directory) {
+        //each child entry will fill 8 bytes.
+        fread(&node->num_children, 1, sizeof(int), fil);
+
+        //allocate memory for children array
+        node->children = malloc(sizeof(struct inode*) * (node->num_children));
+
+        for (int i = 0; i < node->num_children; i++) {
+
+            //calculating the offset
+            size_t bytes_read = ftell(fil);
+
+            fread(&node->children[i], 1, sizeof(size_t), fil);
+
+            if (i == 0) {
+                //use recursive with the right offset
+                node->children[i] = load_inodes_recursive(fil, bytes_read + (node->num_children * sizeof(size_t)));
+            } else {
+                node->children[i] = load_inodes_recursive(fil, bytes_read);
+            }
+        }
+    }
+    else {
+        //node is a file, no children
+
+        fread(&node->filesize, 1, sizeof(int), fil);
+        fread(&node->num_blocks, 1, sizeof(int), fil);
+
+        //allocate memory for blocks array
+        node->blocks = malloc(sizeof(size_t) * node->num_blocks);
+
+        fread(node->blocks, sizeof(size_t), node->num_blocks, fil);
+    }
+
+    return node;
+}
+
+
+
+struct inode* load_inodes( char* master_file_table ) {
+    FILE *fil = fopen(master_file_table, "r");
+
+    if (fil == NULL) {
+        perror("File opening");
+        return NULL;
+    }
+
+    struct inode *root = load_inodes_recursive(fil,  0);
+
+    fclose(fil);
+
+    return root;
+}
+//-----------------------------------------------------------
+
+
+/*
 struct inode* load_inodes( char* master_file_table )
 {
+    int length_of_name;
+
     FILE *fil = fopen(master_file_table, "r");
     if (fil == NULL) {
         perror("File opening");
-        return EXIT_FAILURE;
+        return NULL;
     }
 
-    // struct
-    // kanskje ikke smart å kalle den root mtp den skal være generell?
-    struct inode* root = malloc(sizeof(struct inode));
+    struct inode* root = malloc(sizeof(struct inode)); // kall annet enn root
 
-    // ID
-    fread(&root->id, 1, sizeof(int),fil);
+    fread(&root->id, 1, sizeof(int),fil); // ID
 
-    //LENGTH OF NAME
-    int length_of_name;
-    fread(&length_of_name, 1, sizeof(int), fil);
+    fread(&length_of_name, 1, sizeof(int), fil); //LENGTH OF NAME
 
-    // ->/.? 
-    root->name = malloc(length_of_name); //+1 for good meassure?
+    root->name = malloc(length_of_name); //lager plass til navnet på heap
     if (root->name == NULL){
         printf("heap alloc failed.\n");
-        return EXIT_FAILURE;
+        return NULL;
     }
 
-    // leser fra fil inn i struct navn
-    fread(root->name, 1, length_of_name, fil);
+    fread(root->name, 1, length_of_name, fil); // leser fra fil inn i struct navn
 
-    //flag
-    fread(&root->is_directory, 1, sizeof(char), fil);
+    fread(&root->is_directory, 1, sizeof(char), fil); //flag
 
-    // dom c syntax ugh
-    if (root->is_directory) {
-        //num_children
-        fread(&root->num_children, 1, sizeof(int), fil);
+    if (root->is_directory) { // 1 for dir 0 for fil
+
+        fread(&root->num_children, 1, sizeof(int), fil); // num_children
 
         root->children = malloc(sizeof(struct inode*) * (root->num_children));
 
@@ -112,8 +259,8 @@ struct inode* load_inodes( char* master_file_table )
             fread(&root->children[i], 1, sizeof(size_t), fil);
             root->children[i] = load_inodes(master_file_table); //?
         }
-    }
-    else {
+
+    } else {
         fread(&root->filesize, 1, sizeof(int), fil); //file_size
         fread(&root->num_blocks, 1, sizeof(int), fil); //num_blocks
 
@@ -123,9 +270,9 @@ struct inode* load_inodes( char* master_file_table )
     }
 
     fclose(fil);
-
-    return EXIT_SUCCESS;
+    return root;
 }
+*/
 
 static void save_inode( FILE* file, struct inode* node )
 {
