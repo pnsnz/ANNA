@@ -103,7 +103,7 @@ int delete_file( struct inode* parent, struct inode* node )
         struct inode* child = parent->children[i];
 
         if ( child->id == node->id ) { // finn riktig node i children
-            parent->children[i] == NULL;
+            parent->children[i] = NULL;
         }
     }
     
@@ -136,7 +136,7 @@ int delete_dir( struct inode* parent, struct inode* node )
         struct inode* child = parent->children[i];
 
         if ( child->id == node->id ) { // finn riktig node i children
-            parent->children[i] == NULL;
+            parent->children[i] = NULL;
         }
     }
 
