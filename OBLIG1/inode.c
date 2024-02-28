@@ -147,7 +147,7 @@ int delete_dir( struct inode* parent, struct inode* node )
 }
 
 struct inode* load_inodes_recursive(FILE* fil, size_t offset)
-{
+{   
     //sets the file position to given offset, returns 0 if success
     fseek(fil, offset, SEEK_SET);
 
@@ -158,9 +158,6 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
         perror("Failed allocating memory for inode");
         return NULL;
     }
-
-    //checking the initial position of file, using this to read offset correctly
-    size_t initial_position = ftell(fil);
 
     fread(&node->id, 1, sizeof(int),fil);
 
@@ -177,7 +174,6 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
         return NULL;
     }
 
-
     fread(&node->is_directory, 1, sizeof(char), fil);
 
     if(node->is_directory) {
@@ -188,13 +184,18 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
         node->children = malloc(sizeof(struct inode*) * (node->num_children));
 
         for (int i = 0; i < node->num_children; i++) {
-            fread(&node->children[i], 1, sizeof(size_t), fil);
 
             //calculating the offset
-            size_t bytes_read = ftell(fil) - initial_position;
+            size_t bytes_read = ftell(fil);
 
-            //use recursive with the right offset
-            node->children[i] = load_inodes_recursive(fil, bytes_read+offset);
+            fread(&node->children[i], 1, sizeof(size_t), fil);
+
+            if (i == 0) {
+                //use recursive with the right offset
+                node->children[i] = load_inodes_recursive(fil, bytes_read + (node->num_children * sizeof(size_t)));
+            } else {
+                node->children[i] = load_inodes_recursive(fil, bytes_read);
+            }
         }
     }
     else {
