@@ -78,7 +78,7 @@ struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
     struct inode *file = malloc(sizeof(struct inode));
     if (file == NULL) {
         perror("Couldnt allocate space for file");
-        free(file);
+        // free(file);
         return NULL;
     }
 
@@ -87,8 +87,8 @@ struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
     file->name = malloc(strlen(name)+1);
     if(file->name == NULL){
         perror("Couldnt allocate space for name");
-        free(file->name);
-        free(file);
+        // free(file->name);
+        // free(file);
         return NULL;
     }
 
@@ -103,9 +103,9 @@ struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
     file->blocks = malloc(sizeof(size_t) * number_of_blocks);
     if(file->blocks == NULL) {
         perror("Couldnt allocate space for blocks");
-        free_blocks(index,number_of_blocks);
-        free(file->name);
-        free(file);
+        // free_blocks(index,number_of_blocks);
+        // free(file->name);
+        // free(file);
         return NULL;
     }
 
@@ -162,6 +162,9 @@ struct inode* find_inode_by_name( struct inode* parent, char* name )
 
     for( int i = 0; i < parent->num_children; i++ ) {
         struct inode* current_child = parent->children[i];
+        if (current_child == NULL) {
+            continue;
+        }
 
         if(strcmp(current_child->name, name) == 0 ) {
             return current_child;
@@ -193,7 +196,9 @@ int is_node_in_parent( struct inode* parent, struct inode* node ) // 0 = false, 
     // parent er en directory med barn
     for ( int i = 0; i < parent->num_children; i++ ) { // iterer gjennom barn
         struct inode* child = parent->children[i]; // mellomlagrer
-
+        if (child == NULL) {
+            continue;
+        }
         if ( child->id == node->id ) {
             return 1; 
         }
@@ -378,6 +383,10 @@ static void save_inode( FILE* file, struct inode* node )
         for( int i=0; i<node->num_children; i++ )
         {
             struct inode* child = node->children[i];
+            // EGEN if sjekk
+            if ( child == NULL) {
+                continue;
+            }
             size_t id = child->id;
             fwrite( &id, 1, sizeof(size_t), file );
         }
@@ -385,6 +394,10 @@ static void save_inode( FILE* file, struct inode* node )
         for( int i=0; i<node->num_children; i++ )
         {
             struct inode* child = node->children[i];
+            // EGEN if sjekk
+            if ( child == NULL) {
+                continue;
+            }
             save_inode( file, child );
         }
     }
