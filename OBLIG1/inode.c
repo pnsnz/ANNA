@@ -68,13 +68,14 @@ static int verified_delete_in_parent( struct inode* parent, struct inode* node )
 
 int is_node_in_parent( struct inode* parent, struct inode* node ) // 0 = false, 1 = true
 {
-    if (parent == NULL | node == NULL) { // hvis forelder/barn ikke finnes
+    if (parent == NULL || node == NULL) { // hvis forelder/barn ikke finnes
         return 0;
     }
     
     if (!parent->is_directory) { // hvis fil
         return 0;
     }
+
     if (parent->num_children == 0) { // hvis ingen barn
         return 0;
     }
@@ -83,7 +84,7 @@ int is_node_in_parent( struct inode* parent, struct inode* node ) // 0 = false, 
     for ( int i = 0; i < parent->num_children; i++ ) { // iterer gjennom barn
         struct inode* child = parent->children[i]; // mellomlagrer
 
-        if ( strcmp(parent->name, child->name) == 0 ) {
+        if ( child->id == node->id ) {
             return 1; 
         }
     }
@@ -94,17 +95,23 @@ int is_node_in_parent( struct inode* parent, struct inode* node ) // 0 = false, 
 int delete_file( struct inode* parent, struct inode* node )
 {
     
-    // hvis ikke direkte forelder, denne sjekker også at begge finnes, og at parent har barn
+    // hvis ikke direkte forelder. Denne sjekker også at begge finnes, og at parent har barn
     if ( is_node_in_parent(parent, node) == 0 ) { 
         return -1;
     }
 
+    char foundChild = 0;
     for ( int i = 0; i < parent->num_children; i++ ) { // fjern node fra parent->children[]
-        struct inode* child = parent->children[i];
+        struct inode *child = parent->children[i];
 
         if ( child->id == node->id ) { // finn riktig node i children
             parent->children[i] = NULL;
+            foundChild = 1;
         }
+    }
+
+    if (foundChild == 0) {
+        return -1;
     }
     
     for ( int i = 0; i < node->num_blocks; i++ ) { // frigjør blokkene
@@ -119,25 +126,28 @@ int delete_file( struct inode* parent, struct inode* node )
 
 int delete_dir( struct inode* parent, struct inode* node )
 {
-    if ( is_node_in_parent(parent, node) == 0 ) { 
+    if ( is_node_in_parent(parent, node) == 0 || !(node->is_directory)) { 
         return -1;
     }
 
-    if (!node->is_directory) { // hvis barnet er en fil
-        return -1;
-    }
 
     // antar at vi har endret num_children riktig til nå
     if (node->num_children > 0) {  
         return -1; // hvis noden ikke er tom
     }
 
+    char foundChild = 0;
     for ( int i = 0; i < parent->num_children; i++ ) { // fjern node fra parent->children[]
-        struct inode* child = parent->children[i];
+        struct inode *child = parent->children[i];
 
         if ( child->id == node->id ) { // finn riktig node i children
             parent->children[i] = NULL;
+            foundChild = 1;
         }
+    }
+
+    if (foundChild == 0) {
+        return -1;
     }
 
     free(node->children);
