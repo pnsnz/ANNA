@@ -42,9 +42,9 @@ static int next_inode_id( )
     return retval;
 }
 
-void free_blocks(int *indexes)
+void free_blocks(int *indexes, int length)
 {
-    for(int i = 0; i < sizeof(indexes); i++)
+    for(int i = 0; i < length; i++)
     {
         free_block(indexes[i]);
     }
@@ -69,7 +69,7 @@ struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
         if(allocate_block() == -1)
         {
             perror("Cannot allocate all needed blocks");
-            free_blocks(index);
+            free_blocks(index, number_of_blocks);
             return NULL;
         }
         index[i] = allocate_block();
@@ -103,7 +103,7 @@ struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
     file->blocks = malloc(sizeof(size_t) * number_of_blocks);
     if(file->blocks == NULL) {
         perror("Couldnt allocate space for blocks");
-        free_blocks(index);
+        free_blocks(index,number_of_blocks);
         free(file->name);
         free(file);
         return NULL;
@@ -116,15 +116,42 @@ struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
 }
 
 struct inode* create_dir( struct inode* parent, char* name )
-{
-    /* to be implemented */
-    return NULL;
-}
+{ //anna sin kode
+        if (find_inode_by_name(parent, name) != NULL){
+            return NULL;
+        }
+
+        // create struct
+        struct inode* new_dir = malloc(sizeof(struct inode*));
+
+        //set ID
+        new_dir->id = next_inode_id();
+
+        // set name
+        new_dir->name = malloc(sizeof(name));
+        new_dir->name = name;
+        if (new_dir->name == NULL){
+            perror("couldnt allocate name correctly");
+            return NULL;
+        }
+
+        // set flag
+        new_dir->is_directory = 1;
+
+        // num_children
+        new_dir->num_children = 0;
+
+        // malloc struct * num_children0?
+        new_dir->children = malloc(sizeof(struct inode*) * (new_dir->num_children));
+
+        return new_dir;
+    }
+
 
 struct inode* find_inode_by_name( struct inode* parent, char* name )
 {
     //antagelse at parent er dictionary
-    if(!parent->is_directory)
+    if(parent->is_directory == 0)
     {
         return NULL ;
     }
