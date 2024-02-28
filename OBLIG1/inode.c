@@ -44,9 +44,34 @@ static int next_inode_id( )
 
 struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
 {
+
+    //if file with same name exist, return NULL, do nothing
+    if(!parent->is_directory || find_inode_by_name(parent, name) != NULL){
+        return NULL;
+    }
+
+    int number_of_blocks = blocks_needed(size_in_bytes);
+
+    //indexes in the block_table that we used
+    int index[];
+
+    for(int i = 0; i < number_of_blocks; i++)
+    {
+        //can only allocate one block
+        if(allocate_block() == -1)
+        {
+            perror("Cannot allocate all needed blocks");
+            for(int i)
+            free_block()
+            return NULL;
+        }
+        index[i] = allocate_block()
+    }
     /* to be implemented */
     return NULL;
 }
+
+
 
 struct inode* create_dir( struct inode* parent, char* name )
 {
@@ -106,7 +131,6 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
 
     //allocate memory for the node struct
     struct inode* node = malloc(sizeof(struct inode));
-
     if(node == NULL) {
         perror("Failed allocating memory for inode");
         return NULL;
@@ -144,7 +168,7 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
             fread(&node->children[i], 1, sizeof(size_t), fil);
 
             if (i == 0) {
-                //use recursive with the right offset
+                // ved første barnet må vi hoppe over array
                 node->children[i] = load_inodes_recursive(fil, bytes_read + (node->num_children * sizeof(size_t)));
             } else {
                 node->children[i] = load_inodes_recursive(fil, bytes_read);
