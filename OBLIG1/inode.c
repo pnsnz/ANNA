@@ -93,6 +93,7 @@ int is_node_in_parent( struct inode* parent, struct inode* node ) // 0 = false, 
 
 int delete_file( struct inode* parent, struct inode* node )
 {
+    
     // hvis ikke direkte forelder, denne sjekker også at begge finnes, og at parent har barn
     if ( is_node_in_parent(parent, node) == 0 ) { 
         return -1;
@@ -105,7 +106,7 @@ int delete_file( struct inode* parent, struct inode* node )
             parent->children[i] == NULL;
         }
     }
-
+    
     for ( int i = 0; i < node->num_blocks; i++ ) { // frigjør blokkene
         free_block( node->blocks[i] ); // litt usikker på denne
     }
