@@ -1,7 +1,7 @@
-DESIGN:
+DESIGN
 
 1.how to read the master file table from disk and load the inodes into memory:
-- 
+- opening MFT, creating root inode and recursively reading through the MFT, using fread to read apropriate amounts of bytes for each identifying value into correct variables in the inode struct. 
 
 2.Any implementation requirements that are not met
 - all implementation required is met.
