@@ -1,3 +1,5 @@
+DESIGN:
+
 1.how to read the master file table from disk and load the inodes into memory:
 - 
 
