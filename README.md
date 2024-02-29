@@ -1,8 +1,7 @@
 DESIGN:
 
-
-1. 1.how to read the master file table from disk and load the inodes into memory:
--
+1.how to read the master file table from disk and load the inodes into memory:
+- 
 
 2.Any implementation requirements that are not met
 - all implementation required is met.
@@ -21,4 +20,4 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset:
 - also connects children inodes to their parent inodes, puts them in the correct children array
 
 4.any tests that fail and what you think the cause may be
-no failed tests.
+- no failed tests.
