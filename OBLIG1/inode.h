@@ -38,7 +38,7 @@ struct inode* create_file( struct inode* parent, char* name, int size_in_bytes )
 
 /* Create a directory below the inode parent. Parent must
  * be a directory.
- * Returns a pointer to file's inodes.
+ * Returns a pointer to directories's inodes.
  */
 struct inode* create_dir( struct inode* parent, char* name );
 

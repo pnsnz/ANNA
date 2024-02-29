@@ -1,3 +1,4 @@
+
 CFLAGS  = -std=gnu11 -g -Wall -Wextra
 
 BIN =	create_fs_1 \
@@ -72,9 +73,10 @@ test_load: prep_test_load test_load_fs_1 test_load_fs_2 test_load_fs_3
 
 
 test_create_fs_1: create_fs_1
-	$(VALG) ./create_fs_1 create_example1/master_file_table create_example1/block_allocation_table
+	$(VALG) ./create_fs_1 
+	
 
-test_create_fs_2: create_fs_2
+test_create_fs_2: create_fs_2make
 	$(VALG) ./create_fs_2 create_example2/master_file_table create_example2/block_allocation_table
 
 test_create_fs_3: create_fs_3
