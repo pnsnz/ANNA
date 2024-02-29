@@ -180,13 +180,14 @@ struct inode* find_inode_by_name( struct inode* parent, char* name )
 
     return NULL;
 }
-
+/*
 static int verified_delete_in_parent( struct inode* parent, struct inode* node )
 {
-    /* to be implemented
-     * not a must*/
+     to be implemented
+     not a must
     return 0;
 }
+*/
 
 int is_node_in_parent( struct inode* parent, struct inode* node )
 {
@@ -218,37 +219,46 @@ int is_node_in_parent( struct inode* parent, struct inode* node )
 
 int delete_file( struct inode* parent, struct inode* node )
 {
-    // hvis ikke direkte forelder. Denne sjekker også at begge finnes, og at parent har barn
+    // important things
     if ( is_node_in_parent(parent, node) == 0 ) {
+        fprintf(stderr, "delete_file not direct parent" );
         return -1;
     }
 
     char foundChild = 0;
 
-    for ( int i = 0; i < parent->num_children; i++ ) { // fjern node fra parent->children[]
+    for ( int i = 0; i < parent->num_children; i++ ) {
         struct inode *child = parent->children[i];
 
-        if ( child->id == node->id ) {// finn riktig node i children
+
+        //find the kid
+        if ( child->id == node->id ) {
             foundChild = 1;
 
-            //frigjør minne for navn og blocks
+            //free memory allocated for name
             free(parent->children[i]->name);
 
-            //frigjør noden
-            free(parent->children[i]);
-
+            //free blocks allocated
             for ( int b = 0; b < parent->children[i]->num_blocks; b++ ) { // frigjør blokkene
                 free_block( parent->children[i]->blocks[b] ); // litt usikker på denne
             }
+
+            //free memory for the blocks array
             free(parent->children[i]->blocks);
 
-            parent->num_children--;
+            //let the kid go
+            free(child);
 
+            //empty the disk
+            parent->children[i] = NULL;
 
-            //skyve arrayet på plass
-            for(int j = i; j < parent->num_children; j++){
+            //push nodes to the correct index, fill the hole up(??)
+            for(int j = i; j < parent->num_children-1; j++){
                 parent->children[j] = parent->children[j+1];
             }
+
+            //be good let the parent know
+            parent->num_children--;
 
         }
     }
@@ -257,6 +267,7 @@ int delete_file( struct inode* parent, struct inode* node )
     parent->children = realloc(parent->children, sizeof(struct inode *) * (parent->num_children));
 
     if (!foundChild) {
+        fprintf(stderr, "delete file, didnt find the child" );
         return -1;
     }
 
@@ -266,22 +277,29 @@ int delete_file( struct inode* parent, struct inode* node )
 
 int delete_dir( struct inode* parent, struct inode* node )
 {
-    if ( is_node_in_parent(parent, node) == 0 || !(node->is_directory)) {
+    //other things that are importante
+    if (is_node_in_parent(parent, node) == 0 || !(node->is_directory)) {
+        fprintf(stderr,"delete dir first if failed" );
         return -1;
     }
 
-    // antar at vi har endret num_children riktig til nå
+    //have to be empttyyyy
     if (node->num_children > 0) {
-        return -1; // hvis noden ikke er tom
+       // fprintf(stderr, "delete dir node not empty" );
+        return -1;
     }
 
     char foundChild = 0;
-    for ( int i = 0; i < parent->num_children; i++ ) { // fjern node fra parent->children[]
+    for ( int i = 0; i < parent->num_children; i++ ) {
         struct inode *child = parent->children[i];
 
-        if ( child->id == node->id ) { // finn riktig node i children
+        //find the kid
+        if ( child->id == node->id ) {
 
             foundChild = 1;
+
+            //free memory allocated for the name
+            free(parent->children[i]->name);
 
             //free them kids
 
@@ -297,22 +315,29 @@ int delete_dir( struct inode* parent, struct inode* node )
                 }
             }
 
+            //free memory allocated for children array
             free(parent->children[i]->children);
-            free(parent->children[i]->name);
-            free(parent->children[i]);
 
-            parent->num_children--;
+            //free memory allocated for the node
+            free(child);
 
-            //skyve arrayet på plass
-            for(int j = i; j < parent->num_children; j++){
+            //tomme disk
+            parent->children[i] = NULL;
+
+            // push nodes to the correct index, fill the hole up(??)
+            for(int j = i; j < parent->num_children-1; j++){
                 parent->children[j] = parent->children[j+1];
             }
+
+            // parent lost the kid :(
+            parent->num_children--;
         }
     }
     //realloc so more effective, but idk if necessary
     parent->children = realloc(parent->children, sizeof(struct inode *) * (parent->num_children ));
 
     if (!foundChild) {
+        fprintf(stderr, "delete dir couldnt find the child" );
         return -1;
     }
     return 0;
@@ -340,7 +365,7 @@ struct inode* load_inodes_recursive(FILE* fil, size_t offset)
     fread(node->name, 1, len, fil);
 
     if (node->name == NULL){
-        printf("Failed reading name");
+        perror("Failed reading name");
         free(node);
         return NULL;
     }
