@@ -265,41 +265,7 @@ int delete_file( struct inode* parent, struct inode* node )
 
 
 int delete_dir( struct inode* parent, struct inode* node )
-{if (is_node_in_parent(parent, node) == 0 || !(node->is_directory))
-    {
-        return -1;
-    }
-
-    if (node->num_children > 0)
-    {
-        // Directory is not empty, cannot delete
-        return -1;
-    }
-
-    // Free directory's name
-    free(node->name);
-
-    // Remove directory from parent's children array
-    for (int i = 0; i < parent->num_children; i++)
-    {
-        if (parent->children[i] == node)
-        {
-            // Shift remaining elements in the array to fill the gap
-            for (int j = i; j < parent->num_children - 1; j++)
-            {
-                parent->children[j] = parent->children[j + 1];
-            }
-            parent->num_children--;
-            break;
-        }
-    }
-
-    // Free directory inode
-    free(node);
-
-    return 0;
-}
-    /*
+{
     if ( is_node_in_parent(parent, node) == 0 || !(node->is_directory)) {
         return -1;
     }
@@ -350,7 +316,7 @@ int delete_dir( struct inode* parent, struct inode* node )
         return -1;
     }
     return 0;
-}*/
+}
 
 struct inode* load_inodes_recursive(FILE* fil, size_t offset)
 {
